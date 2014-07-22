@@ -16,4 +16,11 @@ interface L10nConverterInterface
     * @return string
     */
     public function convertL10nResourceList(array $l10nResourceList);
+
+    /**
+     * Convert an input string to a list of L10nResources
+     * @param string $input
+     * @return array(L10nResources) $l10nResourceList
+     */
+    public function convertToL10nResourceList($input);
 }

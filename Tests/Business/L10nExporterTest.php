@@ -26,7 +26,7 @@ class L10nExporterTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(array($l10nResource)))
         ;
 
-        $l10nConverter = $this->getMock('L10nBundle\Manager\L10nConverterInterface', array('convertL10nResourceList'), array(), '', false);
+        $l10nConverter = $this->getMock('L10nBundle\Manager\L10nConverterInterface', array('convertL10nResourceList', 'convertToL10nResourceList'), array(), '', false);
         $l10nConverter->expects($this->once())
             ->method('convertL10nResourceList')
             ->with(array($l10nResource))

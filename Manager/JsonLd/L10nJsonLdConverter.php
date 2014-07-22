@@ -51,4 +51,20 @@ class L10nJsonLdConverter implements L10nConverterInterface
         return JsonLD::toString($compacted, true);
     }
 
+    /**
+     * Convert a JSON-LD file to a list of L10nResources
+     * @param string $input JSON-LD document
+     * @return array(L10nResources) $l10nResourceList
+     */
+    public function convertToL10nResourceList($input)
+    {
+        $l10nResourceList = array();
+
+        $quadList = JsonLD::toRdf($input);
+        foreach ($quadList as $quad) {
+            //@@TODO : do stuff
+        }
+
+    }
+
 }
