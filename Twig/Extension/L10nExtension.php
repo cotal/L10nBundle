@@ -8,14 +8,16 @@ namespace L10nBundle\Twig\Extension;
 
 use L10nBundle\Business\L10nProvider;
 
-class L10nExtension extends TwigExtension
+class L10nExtension extends \Twig_Extension
 {
     /**
      * @var \L10nBundle\Business\L10nProvider
      */
     private $l10nProvider;
 
-
+    /**
+     * @param L10nProvider $l10nProvider
+     */
     public function __construct(L10nProvider $l10nProvider)
     {
         $this->l10nProvider = $l10nProvider;
@@ -27,7 +29,7 @@ class L10nExtension extends TwigExtension
     public function getFilters()
     {
         return array(
-            'l10n' => new \Twig_Filter_Method($this, 'getL10n')
+            'l10n' => new \Twig_SimpleFilter('l10n', array($this, 'getL10n'))
         );
     }
 
@@ -48,4 +50,3 @@ class L10nExtension extends TwigExtension
         return $this->l10nProvider->getL10n($key);
     }
 }
-

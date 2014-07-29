@@ -18,7 +18,6 @@ class Yaml
                      'en-GB' => 'other value en'
                     )
                 )
-
             )
         );
     }
@@ -62,14 +61,18 @@ class L10nYamlManagerTest extends \PHPUnit_Framework_TestCase
      */
     private $valueList;
 
-    private $l10nManager;
+    /**
+     *
+     * @var array
+     */
     private $yamlResourceList;
+
+    private $l10nManager;
 
     public function setUp()
     {
         $this->l10nResource = new L10nResource();
-        $this->valueList = array
-        (
+        $this->valueList = array (
                 'fr-FR' => 'autre value fr',
                 'en-GB' => 'other value en'
         );
@@ -77,33 +80,35 @@ class L10nYamlManagerTest extends \PHPUnit_Framework_TestCase
         $this->l10nResource->setIdResource($this->idResource);
         $this->l10nResource->setValueList($this->valueList);
 
-        $l10nManagerReflection = new \ReflectionClass('L10nBundle\Manager\Yaml\L10nYamlManager');
-        $method = $l10nManagerReflection->getMethod('getYamlResourceList');
-        $method->setAccessible(true);
-
-        $this->l10nManager = $this->getMock('L10nBundle\Manager\Yaml\L10nYamlManager', array('getYamlResourceList'), array('someDataFile'), 'L10nYamlManager', false);
-
         $this->yamlResourceList =
             array(
                 'key' => array
                 (
-                    'idLoc'  =>  array
-                        (
-                         'fr-FR' => 'autre value fr',
-                         'en-GB' => 'other value en'
-                        )
+                    'idLoc' => array
+                    (
+                        'fr-FR' => 'autre value fr',
+                        'en-GB' => 'other value en'
+                    )
                 )
-        );
+            );
 
-        $this->l10nManager->expects($this->any())
-            ->method('getYamlResourceList')
-            ->with()
-            ->will($this->returnValue($this->yamlResourceList));
+        $l10nManagerReflection = new \ReflectionClass('L10nBundle\Manager\Yaml\L10nYamlManager');
+
+        $this->l10nManager = $this->getMock(
+            'L10nBundle\Manager\Yaml\L10nYamlManager',
+            array('buildCatalogue'),
+            array('fake_path'),
+            'L10nYamlManager',
+            false
+            );
+
+        $privateProperty = $l10nManagerReflection->getProperty('catalogue');
+        $privateProperty->setAccessible(true);
+        $privateProperty->setValue($this->l10nManager , $this->yamlResourceList);
     }
 
     public function testGetL10nResource()
     {
-        $l10nManager = new L10nYamlManager('someDataFile');
         $result = $this->l10nManager->getL10nResource($this->idResource, $this->idLocalization);
 
         $this->assertEquals($this->l10nResource, $result);
@@ -111,20 +116,71 @@ class L10nYamlManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testGetAllL10nResourceList()
     {
-        $l10nManager = new L10nYamlManager('someDataFile');
         $result = $this->l10nManager->getAllL10nResourceList();
         $this->assertEquals(array($this->l10nResource), $result);
     }
 
-    public function testGetYamlResourceList()
+    public function test__construct()
     {
-        $l10nManager = new L10nYamlManager('someDataFile');
+        $path = 'yet/another/fake/path';
 
         $l10nManagerReflection = new \ReflectionClass('L10nBundle\Manager\Yaml\L10nYamlManager');
+        $method = $l10nManagerReflection->getMethod('buildCatalogue');
+        $method->setAccessible(true);
 
-        $oMethod = $l10nManagerReflection->getMethod('getYamlResourceList');
+        $l10nManager = $this->getMock(
+            'L10nBundle\Manager\Yaml\L10nYamlManager',
+            array('buildCatalogue'),
+            array($path),
+            'L10nYamlManager',
+            false
+            );
+
+        $l10nManager->expects($this->once())
+            ->method('buildCatalogue')
+            ->with($path)
+            ->will($this->returnValue($this->yamlResourceList));
+
+        $l10nManager->__construct($path);
+
+        $this->assertEquals($this->yamlResourceList,
+            $l10nManager->getCatalogue());
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testSetL10nResource()
+    {
+        $this->l10nManager->setL10nResource($this->l10nResource);
+    }
+
+    /**
+     * This test check the buildCatalogue() method
+     * It's mocked in all other tests
+     */
+    public function testBuildCatalogue()
+    {
+        $l10nManagerReflection = new \ReflectionClass('L10nBundle\Manager\Yaml\L10nYamlManager');
+
+        $oMethod = $l10nManagerReflection->getMethod('buildCatalogue');
         $oMethod->setAccessible(true);
-        $result = $oMethod->invoke($l10nManager);
+        $result = $oMethod->invoke($this->l10nManager, '/fake/path');
         $this->assertEquals($this->yamlResourceList, $result);
     }
+
+    /**
+     * This test seems useless, since hydrate() is already called in other teste methods,
+     * But the goal of this test is to point directly on an error in hydrate.
+     */
+    public function testHydrate()
+    {
+        $l10nManagerReflection = new \ReflectionClass('L10nBundle\Manager\Yaml\L10nYamlManager');
+
+        $oMethod = $l10nManagerReflection->getMethod('hydrate');
+        $oMethod->setAccessible(true);
+        $result = $oMethod->invoke($this->l10nManager, $this->idLocalization, $this->idResource, $this->valueList);
+        $this->assertEquals($this->l10nResource, $result);
+    }
+
 }

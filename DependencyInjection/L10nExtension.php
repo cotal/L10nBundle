@@ -4,6 +4,7 @@ namespace L10nBundle\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader;
 
@@ -22,21 +23,43 @@ class L10nExtension extends Extension
         $loader->load('business.xml');
         $loader->load('twig.xml');
 
-        $container->setParameter('default_localization', $config['default_localization']);
-        $container->setParameter('default_locale', $config['default_locale']);
-        $container->setParameter('l10n_export_dir', $config['export_dir']);
+        $container->setParameter('localization_fallback', $config['localization_fallback']);
+        $container->setParameter('locale_fallback', $config['locale_fallback']);
 
+        $this->loadDataManager($config, $container);
+    }
 
-        //YAML config
-        $container->setParameter('yaml_data_file', count($config['yaml']) ? $config['yaml']['data_file'] : '');
+    /**
+     * @param array            $config
+     * @param ContainerBuilder $container
+     */
+    private function loadDataManager(array $config, ContainerBuilder $container)
+    {
+        $loadDefinitionMethod = 'load' . ucfirst($config['manager']) . 'Manager';
 
-        //MongoDB config
-        $container->setParameter('mongodb_host', count($config['mongodb']) ? $config['mongodb']['host'] : '');
-        $container->setParameter('mongodb_port', count($config['mongodb']) ? $config['mongodb']['port'] : '');
-        $container->setParameter('mongodb_username', count($config['mongodb']) ? $config['mongodb']['username'] : '');
-        $container->setParameter('mongodb_password', count($config['mongodb']) ? $config['mongodb']['password'] : '');
-        $container->setParameter('mongodb_database', count($config['mongodb']) ? $config['mongodb']['database'] : '');
+        if (method_exists($this, $loadDefinitionMethod)) {
+            $definition = $this->$loadDefinitionMethod($config[$config['manager']], $container);
+            $container->setDefinition('l10n_bundle.l10n_manager', $definition);
+        }
+    }
 
-        $container->setAlias('l10n_bundle.l10n_manager', $config['manager']);
+    /**
+     * @param array $config
+     * @param ContainerBuilder $container
+     * @return Definition
+     */
+    private function loadYamlManager(array $config, ContainerBuilder $container)
+    {
+        return new Definition('%l10n_bundle.manager.l10n_yaml.class%', $config);
+    }
+
+    /**
+     * @param array $config
+     * @param ContainerBuilder $container
+     * @return Definition
+     */
+    private function loadMongodbManager(array $config, ContainerBuilder $container)
+    {
+        return new Definition('%l10n_bundle.manager.l10n_mongodb.class%', $config);
     }
 }
